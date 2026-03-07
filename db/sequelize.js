@@ -11,7 +11,5 @@ if (!DB_URI) {
 export const sequelize = new Sequelize(DB_URI, {
   dialect: "postgres",
   logging: false,
-  dialectOptions: {
-    ssl: true
-  },
+  ...(process.env.DB_SSL === "false" ? {} : { dialectOptions: { ssl: true } }),
 });
