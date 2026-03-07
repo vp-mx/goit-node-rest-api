@@ -1,68 +1,58 @@
-import fs from "fs/promises";
-import path from "path";
-import { nanoid } from "nanoid";
-
-const contactsPath = path.resolve("db", "contacts.json");
+import Contact from "../db/models/Contact.js";
 
 /**
  * Lists all contacts from the database.
  */
 async function listContacts() {
-  const data = await fs.readFile(contactsPath, "utf-8");
-  return JSON.parse(data);
+  return await Contact.findAll();
 }
 
 /**
  * Gets a contact by its ID.
  */
 async function getContactById(contactId) {
-  const contacts = await listContacts();
-  const result = contacts.find((item) => item.id === contactId);
-  return result || null;
+  return await Contact.findByPk(contactId);
 }
 
 /**
  * Removes a contact by its ID.
  */
 async function removeContact(contactId) {
-  const contacts = await listContacts();
-  const index = contacts.findIndex((item) => item.id === contactId);
-  if (index === -1) {
+  const contact = await Contact.findByPk(contactId);
+  if (!contact) {
     return null;
   }
-  const [result] = contacts.splice(index, 1);
-  await fs.writeFile(contactsPath, JSON.stringify(contacts, null, 2));
-  return result;
+  await contact.destroy();
+  return contact;
 }
 
 /**
  * Adds a new contact to the database.
  */
-async function addContact({ name, email, phone }) {
-  const contacts = await listContacts();
-  const newContact = {
-    id: nanoid(),
-    name,
-    email,
-    phone,
-  };
-  contacts.push(newContact);
-  await fs.writeFile(contactsPath, JSON.stringify(contacts, null, 2));
-  return newContact;
+async function addContact(data) {
+  return await Contact.create(data);
 }
 
 /**
  * Updates an existing contact.
  */
 async function updateContact(contactId, data) {
-  const contacts = await listContacts();
-  const index = contacts.findIndex((item) => item.id === contactId);
-  if (index === -1) {
+  const contact = await Contact.findByPk(contactId);
+  if (!contact) {
     return null;
   }
-  contacts[index] = { ...contacts[index], ...data };
-  await fs.writeFile(contactsPath, JSON.stringify(contacts, null, 2));
-  return contacts[index];
+  return await contact.update(data);
+}
+
+/**
+ * Updates the favorite status of a contact.
+ */
+async function updateStatusContact(contactId, body) {
+  const contact = await Contact.findByPk(contactId);
+  if (!contact) {
+    return null;
+  }
+  return await contact.update(body);
 }
 
 export default {
@@ -71,4 +61,5 @@ export default {
   removeContact,
   addContact,
   updateContact,
+  updateStatusContact,
 };
