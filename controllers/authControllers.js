@@ -1,7 +1,10 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import gravatar from "gravatar";
 import User from "../db/models/User.js";
 import HttpError from "../helpers/HttpError.js";
+import fs from "fs/promises";
+import path from "path";
 
 /**
  * Register a new user
@@ -17,16 +20,20 @@ export const register = async (req, res, next) => {
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
+    
+    const avatarURL = gravatar.url(email, { s: "250", d: "retro" }, true);
 
     const newUser = await User.create({
       email,
       password: hashedPassword,
+      avatarURL,
     });
 
     res.status(201).json({
       user: {
         email: newUser.email,
         subscription: newUser.subscription,
+        avatarURL: newUser.avatarURL,
       },
     });
   } catch (error) {
@@ -111,6 +118,36 @@ export const updateSubscription = async (req, res, next) => {
     res.status(200).json({
       email: req.user.email,
       subscription,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Update user avatar
+ */
+
+export const updateAvatar = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      throw HttpError(400, "Avatar file is required");
+    }
+
+    const { id } = req.user;
+    const { path: tempUpload, originalname } = req.file;
+
+    const extension = path.extname(originalname);
+    const filename = `${id}_avatar${extension}`;
+    const resultUpload = path.resolve("public", "avatars", filename);
+
+    await fs.rename(tempUpload, resultUpload);
+
+    const avatarURL = `/avatars/${filename}`;
+    await User.update({ avatarURL }, { where: { id } });
+
+    res.status(200).json({
+      avatarURL,
     });
   } catch (error) {
     next(error);
