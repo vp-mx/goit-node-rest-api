@@ -20,6 +20,13 @@ export const loginSchema = Joi.object({
   }),
 });
 
+export const emailSchema = Joi.object({
+  email: Joi.string().email().required().messages({
+    "any.required": "missing required field email",
+    "string.empty": "missing required field email",
+  }),
+});
+
 export const subscriptionSchema = Joi.object({
   subscription: Joi.string().valid("starter", "pro", "business").required().messages({
     "any.required": "Subscription is required",
