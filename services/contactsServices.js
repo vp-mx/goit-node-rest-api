@@ -1,24 +1,36 @@
 import Contact from "../db/models/Contact.js";
 
 /**
- * Lists all contacts from the database.
+ * Lists all contacts from the database for a specific owner.
+ * Supports pagination and favorite filtering.
  */
-async function listContacts() {
-  return await Contact.findAll();
+async function listContacts(owner, { page = 1, limit = 20, favorite }) {
+  const offset = (page - 1) * limit;
+  const where = { owner };
+  
+  if (favorite !== undefined) {
+    where.favorite = favorite === "true";
+  }
+
+  return await Contact.findAll({
+    where,
+    limit: Number(limit),
+    offset: Number(offset),
+  });
 }
 
 /**
- * Gets a contact by its ID.
+ * Gets a contact by its ID for a specific owner.
  */
-async function getContactById(contactId) {
-  return await Contact.findByPk(contactId);
+async function getContactById(contactId, owner) {
+  return await Contact.findOne({ where: { id: contactId, owner } });
 }
 
 /**
- * Removes a contact by its ID.
+ * Removes a contact by its ID for a specific owner.
  */
-async function removeContact(contactId) {
-  const contact = await Contact.findByPk(contactId);
+async function removeContact(contactId, owner) {
+  const contact = await Contact.findOne({ where: { id: contactId, owner } });
   if (!contact) {
     return null;
   }
@@ -34,10 +46,10 @@ async function addContact(data) {
 }
 
 /**
- * Updates an existing contact.
+ * Updates an existing contact for a specific owner.
  */
-async function updateContact(contactId, data) {
-  const contact = await Contact.findByPk(contactId);
+async function updateContact(contactId, data, owner) {
+  const contact = await Contact.findOne({ where: { id: contactId, owner } });
   if (!contact) {
     return null;
   }
@@ -45,10 +57,10 @@ async function updateContact(contactId, data) {
 }
 
 /**
- * Updates the favorite status of a contact.
+ * Updates the favorite status of a contact for a specific owner.
  */
-async function updateStatusContact(contactId, body) {
-  const contact = await Contact.findByPk(contactId);
+async function updateStatusContact(contactId, body, owner) {
+  const contact = await Contact.findOne({ where: { id: contactId, owner } });
   if (!contact) {
     return null;
   }
